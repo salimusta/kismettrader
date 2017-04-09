@@ -1,0 +1,38 @@
+{
+  "name": "secretTool",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "react-scripts": "0.7.0",
+    "eslint": "^3.1.1",
+    "eslint-plugin-json": "^1.2.0",
+    "eslint-plugin-one-variable-per-var": "0.0.3",
+    "babel-eslint": "^6.1.2",
+    "eslint-plugin-react": "^6.9.0"
+  },
+  "dependencies": {
+    "biguint-format": "^1.0.0",
+    "classnames": "^2.2.5",
+    "crypto": "0.0.3",
+    "lodash": "^4.17.4",
+    "nonce": "^1.0.4",
+    "react": "^15.4.2",
+    "react-bootstrap": "^0.30.8",
+    "react-dom": "^15.4.2",
+    "react-redux": "^4.4.6",
+    "react-router": "^3.0.1",
+    "react-rt-chart": "^1.3.0",
+    "recharts": "^0.21.2",
+    "redux": "^3.6.0",
+    "redux-thunk": "^2.1.0",
+    "sha512": "0.0.1",
+    "superagent": "^3.3.2",
+    "superagent-promise": "^1.1.0"
+  },
+  "scripts": {
+    "start": "npm install && react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
