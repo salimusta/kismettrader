@@ -38,7 +38,7 @@ const rates = (state = [], action) => {
     case 'BUY_ALL_COIN':
       let mockBalances = state.mockBalances;
       for (const coin in state.buyPrices) {
-        mockBalances = buyCoin(mockBalances, coin, 0.01, state.buyPrices[coin].Value);
+        mockBalances = buyCoin(mockBalances, coin, 0.0004, state.buyPrices[coin].Value);
       }
       return {
         ...state,
@@ -134,7 +134,7 @@ const rates = (state = [], action) => {
             //SHOULD WE BUY ????
             const evolutionCondition = buyPrices[coinName].Evolution > window.BUYAT;
             const wasCrashinghard = buyPrices[coinName].wasCrashinghard;
-            const crashinghard = buyPrices[coinName].Evolution < -0.8 || (wasCrashinghard && buyPrices[coinName].Evolution <= -0.3);
+            const crashinghard = buyPrices[coinName].Evolution < -0.5 || (wasCrashinghard && buyPrices[coinName].Evolution <= 0);
             const pricePositionCondition = Math.abs(minPurchasePrice24h - purchasePrice) < (Math.abs(maxSellPrice24h - minPurchasePrice24h) * window.BUYWHEN);
             const alreadyPurchasedCondition = mockBalances[coinName] ? mockBalances[coinName].amount > 0 : false;
             const sellingPriceGoingCrazy = sellPrices[coinName].Variation > 2;
@@ -150,7 +150,7 @@ const rates = (state = [], action) => {
           }
         }
       }
-
+      let nbTrades = state.nbTrades;
       //Should we sell?
       for (const coinName in mockBalances) {
         //Calculate Variation of existing amounts
@@ -162,10 +162,12 @@ const rates = (state = [], action) => {
 
           if (amount > 0 && variation >= Number(window.SELLAT) && previousVariation > variation) {
             mockBalances = sellCoin(mockBalances, coinName, sellPrice);
+            nbTrades++;
           } else if (amount > 0 && variation <= Number(window.SELLLIMIT)) {
             mockBalances = sellCoin(mockBalances, coinName, sellPrice);
+            nbTrades++;
           }
-          sellPrices[coinName].previousVariation = variation;
+          mockBalances[coinName].previousVariation = variation;
         }
       }
 
@@ -225,7 +227,7 @@ const rates = (state = [], action) => {
       const tick = state.tick + 1;
 
       if( tick%12 == 0) {
-        window.outputCsv = window.outputCsv + variationBtcMoy+';'+evolution+';'+variationGlobal+';'+totalBTCValue+';'+totalMockBTCValue+'@'
+        window.outputCsv = window.outputCsv + variationBtcMoy+';'+evolution+';'+variationGlobal+';'+totalBTCValue+';'+totalMockBTCValue+';'+nbTrades+'@'
       }
       return {
         ...state,
@@ -239,7 +241,8 @@ const rates = (state = [], action) => {
         totalBTCValue,
         totalMockBTCValue,
         change24h,
-        tick
+        tick,
+        nbTrades
       };
 
     case 'RECEIVE_TRADING_HISTORY':

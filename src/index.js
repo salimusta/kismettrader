@@ -9,7 +9,7 @@ import Page2 from './Page2';
 import './index.css';
 import { Router, Route, browserHistory } from 'react-router';
 
-window.outputCsv = 'variationBtcMoy'+';'+'evolution'+';'+'variationGlobal'+';'+'totalBTCValue'+';'+'totalMockBTCValue'+'@'
+window.outputCsv = 'variationBtcMoy'+';'+'evolution'+';'+'variationGlobal'+';'+'totalBTCValue'+';'+'totalMockBTCValue'+';'+'nbTrades'+'@'
 window.REAL = true;
 
 window.SELLAT = 2;
@@ -35,7 +35,8 @@ const persistedState = {
     difPrices: {},
     priceLowHigh24h :{},
     change24h: {},
-    tick: 0
+    tick: 0,
+    nbTrades: 0
   },
   errors: {
   }
