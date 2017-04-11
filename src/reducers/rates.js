@@ -40,7 +40,6 @@ const rates = (state = [], action) => {
       for (const coin in state.buyPrices) {
         mockBalances = buyCoin(mockBalances, coin, 0.01, state.buyPrices[coin].Value);
       }
-
       return {
         ...state,
         mockBalances
@@ -50,7 +49,6 @@ const rates = (state = [], action) => {
       for (const coin in state.sellPrices) {
         mockBalances = sellCoin(mockBalances, coin, state.sellPrices[coin].Value);
       }
-
       return {
         ...state,
         mockBalances
@@ -104,7 +102,7 @@ const rates = (state = [], action) => {
           const purchasePrice = Number(data[altCoin].lowestAsk);
           const sellPrice = Number(data[altCoin].highestBid);
 
-          if (sellPrice > 0.000001 && Number(volume24h) > 100 && lowHigh24h > 5) {
+          if (sellPrice > 0) {
             if (isEmpty(sellPrices[coinName])) {
               sellPrices[coinName] = {};
               buyPrices[coinName] = {};
@@ -171,26 +169,32 @@ const rates = (state = [], action) => {
         }
       }
 
-      totalBTCValue = mockBalances.BTC.amount;
+      let totalMockBTCValue = mockBalances.BTC.amount;
       for (const coinName in mockBalances) {
         //Calculate Variation of existing amounts
         if (!isEmpty(mockBalances[coinName]) && sellPrices[coinName]) {
           mockBalances[coinName].btcValue = sellPrices[coinName].Value * mockBalances[coinName].amount * (1 - 0.0025);
           mockBalances[coinName].variation = Math.round(((mockBalances[coinName].btcValue / mockBalances[coinName].btcUsed) - 1) * 10000) / 100;
-          totalBTCValue += mockBalances[coinName].btcValue;
+          totalMockBTCValue += mockBalances[coinName].btcValue;
         }
       }
 
-      /*for (const coinName in balances) {
-        //Calculate Variation of existing amounts
-        if (!isEmpty(balances[coinName]) && sellPrices[coinName]) {
-          balances[coinName].btcValue = sellPrices[coinName].Value * balances[coinName].amount * (1 - balances[coinName].fee);
-          balances[coinName].variation = Math.round(((balances[coinName].btcValue / balances[coinName].btcUsed) - 1) * 10000) / 100;
-          //totalBTCValue += mockBalances[coinName].btcValue;
-        }
-      }*/
+      //Calculate the variation and BTC amount of real balances
+      if (balances) {
+        totalBTCValue = Number(balances.BTC.available);
+        for (const coinName in balances) {
+          //Calculate Variation of existing amounts
+          if (!isEmpty(balances[coinName]) && sellPrices[coinName]) {
+            balances[coinName].btcValue = sellPrices[coinName].Value * balances[coinName].available * (1 - balances[coinName].fee);
+            balances[coinName].variation = Math.round(((balances[coinName].btcValue / balances[coinName].btcUsed) - 1) * 10000) / 100;
+            if (!isNaN(Number(balances[coinName].btcValue))) {
+              totalBTCValue += Number(balances[coinName].btcValue);
+            }
 
-      console.log("ticker balances", balances)
+          }
+        }
+      }
+
 
       variationBtc = Math.round(variationBtc * 10000) / 100;
       variationGlobal = Math.round((variationBtc) * 100) / 100;
@@ -205,16 +209,6 @@ const rates = (state = [], action) => {
         evolution = variationBtcMoy - state.oldVariationBtcMoy;
       }
       state.oldVariationBtcMoy = variationBtcMoy;
-      //console.log(estimatedSellBalance, initialValue, profit)
-      //window.outputCsv = window.outputCsv + variationBtcMoy+';'+evolution+';'+variationGlobal+';'+profit+'@'
-      let evolutionChart;
-      if (!state.marketVariation) {
-        evolutionChart = [];
-      } else {
-        evolutionChart = state.marketVariation.evolutionChart;
-      }
-
-      evolutionChart.push({ uv: Math.round(Math.random()*10) });
 
       variationPurchasePrices = Math.round(variationPurchasePrices * 100) / 100;
       variationSellPrices = Math.round(variationSellPrices * 100) / 100;
@@ -224,11 +218,15 @@ const rates = (state = [], action) => {
         variationPurchasePrices,
         variationSellPrices,
         evolution,
-        evolutionChart,
         variationGlobal,
         mockBalances
       };
 
+      const tick = state.tick + 1;
+
+      if( tick%12 == 0) {
+        window.outputCsv = window.outputCsv + variationBtcMoy+';'+evolution+';'+variationGlobal+';'+totalBTCValue+';'+totalMockBTCValue+'@'
+      }
       return {
         ...state,
         marketVariation,
@@ -239,18 +237,25 @@ const rates = (state = [], action) => {
         priceLowHigh24h,
         difPricesTotal,
         totalBTCValue,
-        change24h
+        totalMockBTCValue,
+        change24h,
+        tick
       };
 
     case 'RECEIVE_TRADING_HISTORY':
-      balances = state.balances;
+      const nonZeroBalances = {};
+      for (const altCoin in action.balances) {
+        if (Number(action.balances[altCoin].available) > 0 || Number(action.balances[altCoin].onOrders) > 0) {
+          nonZeroBalances[altCoin] = action.balances[altCoin];
+        }
+      }
+      balances = nonZeroBalances;
       for (const coin in balances) {
         if (balances[coin].available > 0 && coin !== 'BTC') {
           //search latest transaction in the trade HISTORY
           for (const tradeCoin in action.trades) {
             const purchasedCoin = tradeCoin.substring(4, 10);
             if (tradeCoin.indexOf('BTC_') >= 0 && purchasedCoin === coin) {
-              console.log("Coin: ", purchasedCoin)
               const coinTrades = action.trades[tradeCoin];
               if (coinTrades[0].type === 'buy') {
                 balances[coin].initialPrice = coinTrades[0].rate;
@@ -263,7 +268,6 @@ const rates = (state = [], action) => {
           }
         }
       }
-      console.log("trading balances", balances)
       return {
         ...state,
         balances

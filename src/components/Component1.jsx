@@ -17,13 +17,11 @@ class Component1 extends Component {
   }
 
   closeModal() {
-    console.log("closeModal")
     this.props.dispatch(resetErrors());
     this.setState({ showModal: false });
   }
 
   openModal(modalContent) {
-    console.log("openModal")
     this.setState({ showModal: true, modalContent });
   }
 
@@ -31,9 +29,6 @@ class Component1 extends Component {
     this.props.dispatch(returnTicker());
     if (window.REAL) {
       this.props.dispatch(accountBalances());
-
-      setTimeout(() => { this.props.dispatch(tradingHistory()); }, 1000);
-      this.accountInterval = setInterval(() => { this.props.dispatch(accountBalances()); }, 5000);
       this.mainInterval = setInterval(() => { this.props.dispatch(returnTicker()); }, 5000);
     }
   }
@@ -78,11 +73,12 @@ class Component1 extends Component {
   }
 
   render() {
-    const { marketVariation, sellPrices, buyPrices, change24h, difPrices, priceLowHigh24h, mockBalances, difPricesTotal, balances, totalBTCValue } = this.props.rates;
+    const { marketVariation, sellPrices, buyPrices, change24h, difPrices, priceLowHigh24h, mockBalances, difPricesTotal, balances, totalBTCValue, totalMockBTCValue } = this.props.rates;
 
     let nbCoin = 0;
 
     const moneyVariation = ((totalBTCValue / Number(window.initialMoney)) - 1) * 100;
+    const moneyMockVariation = ((totalMockBTCValue / Number(window.initialMoney)) - 1) * 100;
 
     const mockBalancesTab = [];
     for (const coin in buyPrices) {
@@ -126,6 +122,10 @@ class Component1 extends Component {
           <th>
             {
               haveAnyCoins ? <PriceVar amount={ amountVariation || 0 } /> : null
+            }
+            -/-
+            {
+              balances && balances[coin] && balances[coin].available > 0 ? <PriceVar amount={ balances[coin].variation || 0 } /> : null
             }
           </th>
           <th>
@@ -208,15 +208,25 @@ class Component1 extends Component {
         <h1>
           BTC Value: { totalBTCValue }
         </h1>
-        <h1>
-          Params: REAL: { window.REAL }, SELLAT: { window.SELLAT }, SELLLIMIT: { window.SELLLIMIT }<br />
-          BUYAT: { window.BUYAT }, BUYWHEN: { window.BUYWHEN }, AMOUNT: { window.AMOUNT }, LOWHIGH: { window.LOWHIGH }<br />
-          DISPLAYGRAPH: { window.DISPLAYGRAPH }
-        </h1>
         <h2>
           Money Variation: <PriceVar amount={ moneyVariation } />
         </h2>
-        Remaining BTC: { mockBalances.BTC.amount } -/- { balances && balances['BTC'] ? balances['BTC'].available : ''}
+        Remaining BTC:{ balances && balances['BTC'] ? balances['BTC'].available : ''}
+
+        <h1>
+          Mock BTC Value: { totalMockBTCValue }
+        </h1>
+        <h2>
+          Mock Money Variation: <PriceVar amount={ moneyMockVariation } />
+        </h2>
+        Mock Remaining BTC: { mockBalances.BTC.amount }
+
+        <h3>
+          Params: REAL: { window.REAL }, SELLAT: { window.SELLAT }, SELLLIMIT: { window.SELLLIMIT }<br />
+          BUYAT: { window.BUYAT }, BUYWHEN: { window.BUYWHEN }, AMOUNT: { window.AMOUNT }, LOWHIGH: { window.LOWHIGH }<br />
+          DISPLAYGRAPH: { window.DISPLAYGRAPH }
+        </h3>
+
         <div>
 
           <Button bsStyle="primary" onClick={ this.start.bind(this) }>START</Button>

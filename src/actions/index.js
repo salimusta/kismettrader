@@ -2,8 +2,7 @@ const agent = require('superagent-promise')(require('superagent'), Promise);
 const nonce = require('nonce')();
 const crypto  = require('crypto');
 
-const secret = '8209f043266ab42b9a411da234a92191ffbd431b88506f56c4fea37be4f8c941fb808d285c206d9fe27d4b21998e7c0312af0ee074e02414739cc49f31c768a8';
-const apiKey = 'Y8Z5BAEO-F9UMFCIU-QX155JR2-EGA5VW3K';
+import { secret, apiKey } from '../config/config'
 
 export const REQUEST_BTC_RATES = 'REQUEST_BTC_RATES';
 export const RECEIVE_BTC_RATES = 'RECEIVE_BTC_RATES';
@@ -42,19 +41,16 @@ export function resetErrors() {
 }
 
 export function buyAll() {
-  console.log("ACTION buyAll")
   return {
     type: BUY_ALL_COIN
   };
 }
 export function sellAll() {
-  console.log("ACTION sellAll")
   return {
     type: SELL_ALL_COIN
   };
 }
 export function buyCoin(coin) {
-  console.log("ACTION buyCoin", coin)
   return {
     type: BUY_COIN,
     coin
@@ -62,7 +58,6 @@ export function buyCoin(coin) {
 }
 
 export function sellCoin(coin) {
-  console.log("ACTION sellCoin", coin)
   return {
     type: SELL_COIN,
     coin
@@ -70,7 +65,6 @@ export function sellCoin(coin) {
 }
 
 export function getBtcRates() {
-  console.log("ACTION getBtcRates")
   return dispatch => {
     agent.get('https://api.coinbase.com/v2/prices/ETH-USD/buy')
       .then(json => dispatch(receiveBtcRates(json)));
@@ -90,7 +84,6 @@ export function receiveBtcRates(jsonData) {
 
 //RETURN TICKER POLONIEX
 export function returnTicker() {
-  //console.log("ACTION returnTicker")
   return dispatch => {
     agent.get('https://poloniex.com/public?command=returnTicker')
       .then(json => dispatch(receiveTicker(json)));
@@ -120,29 +113,15 @@ export function accountBalances() {
     }).join('&');
     const signature = crypto.createHmac('sha512', secret).update(paramString).digest('hex');
     agent.post('https://poloniex.com/tradingApi', postData).set('Key', apiKey).set('Sign', signature).set('Content-Type', 'application/x-www-form-urlencoded')
-      .then(json => dispatch(receiveAccountBalances(json)));
+      .then(accountData => dispatch(tradingHistory(accountData.body)));
     return {
       type: REQUEST_ACCOUNT_BALANCES
     };
   };
 }
 
-export function receiveAccountBalances(jsonData) {
-  const nonZeroBalances = {};
-  for (const altCoin in jsonData.body) {
-    if (Number(jsonData.body[altCoin].available) > 0 || Number(jsonData.body[altCoin].onOrders) > 0) {
-      nonZeroBalances[altCoin] = jsonData.body[altCoin];
-    }
-  }
-
-  return {
-    type: RECEIVE_ACCOUNT_BALANCES,
-    balances: nonZeroBalances
-  };
-}
-
 //GET TRADING HISTORY----------------------------------------
-export function tradingHistory() {
+export function tradingHistory(accountData) {
   return dispatch => {
     const postData = {
       command: 'returnTradeHistory',
@@ -155,18 +134,18 @@ export function tradingHistory() {
     }).join('&');
     const signature = crypto.createHmac('sha512', secret).update(paramString).digest('hex');
     agent.post('https://poloniex.com/tradingApi', postData).set('Key', apiKey).set('Sign', signature).set('Content-Type', 'application/x-www-form-urlencoded')
-      .then(json => dispatch(receiveTradingHistory(json)));
+      .then(json => dispatch(receiveTradingHistory(accountData, json.body)));
     return {
       type: REQUEST_TRADING_HISTORY
     };
   };
 }
 
-export function receiveTradingHistory(jsonData) {
-
+export function receiveTradingHistory(accountData, jsonData) {
   return {
     type: RECEIVE_TRADING_HISTORY,
-    trades: jsonData.body
+    trades: jsonData,
+    balances: accountData
   };
 }
 
@@ -196,14 +175,12 @@ export function buyForReal(coin, rate, amount) {
 }
 
 export function receiveBuyReal(jsonData) {
-  console.log("receiveBuyReal", jsonData)
   return {
     type: RECEIVE_BUY_REAL_COIN
   };
 }
 
 export function errorBuyReal(jsonData) {
-  console.log("errorBuyReal", jsonData)
   return {
     type: ERROR_BUY_REAL_COIN,
     message: 'ERROR WHEN BUYING COIN AMOUNT'
@@ -236,14 +213,12 @@ export function sellForReal(coin, rate, amount) {
 }
 
 export function receiveSellReal(jsonData) {
-  console.log("receiveSellReal", jsonData)
   return {
     type: RECEIVE_SELL_REAL_COIN
   };
 }
 
 export function errorSellReal(err) {
-  console.log("errorSellReal", err)
   return {
     type: ERROR_SELL_REAL_COIN,
     message: 'ERROR WHEN SELLING COIN AMOUNT'
