@@ -1,5 +1,5 @@
 import React, { PropTypes, Component } from 'react';
-import { Button, Table, Modal } from 'react-bootstrap';
+import { Button, Table, Modal, Panel } from 'react-bootstrap';
 import { returnTicker, sellCoin, buyCoin, buyAll, sellAll, accountBalances, tradingHistory, buyForReal, sellForReal, resetErrors } from '../actions';
 import { isEmpty } from 'lodash';
 
@@ -12,7 +12,8 @@ class Component1 extends Component {
   constructor (props) {
     super(props);
     this.state = {
-      showModal: false
+      showModal: false,
+      openedPanel: {}
     };
   }
 
@@ -24,6 +25,13 @@ class Component1 extends Component {
   openModal(modalContent) {
     this.setState({ showModal: true, modalContent });
   }
+
+  openPanel(coin) {
+    const openedPanel = this.state.openedPanel;
+    openedPanel[coin] = !openedPanel[coin];
+    this.setState({ openedPanel });
+  }
+
 
   componentWillMount() {
     this.props.dispatch(returnTicker());
@@ -73,14 +81,45 @@ class Component1 extends Component {
   }
 
   render() {
-    const { marketVariation, sellPrices, buyPrices, change24h, difPrices, priceLowHigh24h, mockBalances, difPricesTotal, balances, totalBTCValue, totalMockBTCValue } = this.props.rates;
+    const { marketVariation, sellPrices, buyPrices, change24h, difPrices, priceLowHigh24h, mockBalances, difPricesTotal, balances, totalBTCValue, totalMockBTCValues, nbTrades } = this.props.rates;
 
     let nbCoin = 0;
 
     const moneyVariation = ((totalBTCValue / Number(window.initialMoney)) - 1) * 100;
-    const moneyMockVariation = ((totalMockBTCValue / Number(window.initialMoney)) - 1) * 100;
+    if (!totalMockBTCValues) return null
+    const moneyMockVariation = [];
+
 
     const mockBalancesTab = [];
+    const mockBTCValueTab = [];
+    const chartDataTab = [];
+    const chartDataTab2 = [];
+
+    for(const i in totalMockBTCValues) {
+      moneyMockVariation[i] = ((totalMockBTCValues[i] / Number(window.initialMoney)) - 1) * 100;
+      mockBTCValueTab.push(
+        <tr>
+          <th>
+            { i }
+          </th>
+          <th>
+            { totalMockBTCValues[i] }
+          </th>
+          <th>
+            <PriceVar amount={ moneyMockVariation[i] } />
+          </th>
+          <th>
+            { mockBalances[i].BTC.amount }
+          </th>
+          <th>
+            { nbTrades[i] }
+          </th>
+        </tr>
+
+      );
+    }
+
+
     for (const coin in buyPrices) {
       nbCoin++;
 
@@ -88,14 +127,15 @@ class Component1 extends Component {
       const buyEvolution = buyPrices[coin].Evolution;
       const coinEvolution = change24h[coin];
 
-      const haveAnyCoins = !isEmpty(mockBalances[coin]);
-      const amountVariation = haveAnyCoins ? mockBalances[coin].variation : '';
+      const haveAnyCoins = !isEmpty(mockBalances[0][coin]);
+      const amountVariation = haveAnyCoins ? mockBalances[0][coin].variation : '';
       const redBack = {
         backgroundColor: '#FFDDDD'
       };
 
+
       mockBalancesTab.push(
-        <tr key={ coin + 'balance' } style={ buyPrices[coin].wasCrashinghard ? redBack : null }>
+        <tr onClick={ () => this.openPanel(coin)} key={ coin + 'balance' } style={ buyPrices[coin].wasCrashinghard ? redBack : null }>
           <th>
             { coin }
             <PriceVar amount={ coinEvolution } />
@@ -112,10 +152,13 @@ class Component1 extends Component {
             <PriceVar amount={ difPrices[coin].Value } />
           </th>
           <th>
+            { buyPrices[coin].SmoothEvolution } | { sellPrices[coin].SmoothEvolution } [ { sellPrices[coin].SmoothEvolutionMax } ]
+          </th>
+          <th>
             <PriceVar amount={ priceLowHigh24h[coin].Value } />
           </th>
           <th>
-            { haveAnyCoins ? mockBalances[coin].amount : 0 }
+            { haveAnyCoins ? mockBalances[0][coin].amount : 0 }
             -/-
             { balances && balances[coin] ? balances[coin].available : ''}
           </th>
@@ -129,7 +172,7 @@ class Component1 extends Component {
             }
           </th>
           <th>
-            { haveAnyCoins ? mockBalances[coin].initialPrice : null }
+            { haveAnyCoins ? mockBalances[0][coin].initialPrice : null }
             -/-
             { balances && balances[coin] ? balances[coin].initialPrice : ''}
           </th>
@@ -141,6 +184,30 @@ class Component1 extends Component {
           </th>
         </tr>
       );
+
+      chartDataTab[coin] = {
+        date: new Date(),
+        sellPrice: sellPrices[coin] ? sellPrices[coin].Value : 0,
+        buyPrice: buyPrices[coin] ? buyPrices[coin].Value : 0
+      }
+      chartDataTab2[coin] = {
+        date: new Date(),
+        smoothSell: sellPrices[coin] ? sellPrices[coin].SmoothEvolution : 0,
+        smoothBuy: buyPrices[coin] ? buyPrices[coin].SmoothEvolution : 0
+      }
+
+      mockBalancesTab.push(
+        <tr>
+          <td colSpan="10" style={{height:'0px', padding: "0 0 0 0"}}>
+            <Panel collapsible expanded={this.state.openedPanel[coin]} style={{marging: "0 0 0 0"}}>
+
+            </Panel>
+          </td>
+        </tr>
+      );
+
+
+
     }
 
     const dataEvolution = {
@@ -165,6 +232,7 @@ class Component1 extends Component {
       date: new Date(),
       btcValue: totalBTCValue
     };
+
 
     return (
       <div>
@@ -213,13 +281,32 @@ class Component1 extends Component {
         </h2>
         Remaining BTC:{ balances && balances['BTC'] ? balances['BTC'].available : ''}
 
-        <h1>
-          Mock BTC Value: { totalMockBTCValue }
-        </h1>
-        <h2>
-          Mock Money Variation: <PriceVar amount={ moneyMockVariation } />
-        </h2>
-        Mock Remaining BTC: { mockBalances.BTC.amount }
+        <Table striped bordered condensed hover>
+          <thead>
+            <tr>
+              <th>
+                Account
+              </th>
+              <th>
+                Mock BTC Value
+              </th>
+              <th>
+                Mock Money Variation
+              </th>
+              <th>
+                Mock remaining BTC
+              </th>
+              <th>
+                Trades
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            { mockBTCValueTab }
+          </tbody>
+        </Table>
+
+
 
         <h3>
           Params: REAL: { window.REAL }, SELLAT: { window.SELLAT }, SELLLIMIT: { window.SELLLIMIT }<br />
@@ -251,6 +338,9 @@ class Component1 extends Component {
               <th>
                 Price Dif
                 <PriceVar amount={ difPricesTotal } />
+              </th>
+              <th>
+                Smooth
               </th>
               <th>
                 Low/High 24h

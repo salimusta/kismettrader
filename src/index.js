@@ -10,6 +10,9 @@ import './index.css';
 import { Router, Route, browserHistory } from 'react-router';
 
 window.outputCsv = 'variationBtcMoy'+';'+'evolution'+';'+'variationGlobal'+';'+'totalBTCValue'+';'+'totalMockBTCValue'+';'+'nbTrades'+'@'
+
+
+
 window.REAL = true;
 
 window.SELLAT = 2;
@@ -22,13 +25,35 @@ window.LOWHIGH = 5;
 window.DISPLAYGRAPH = false;
 window.initialMoney = 0.03843494;
 
+window.tickCount = 0;
+
 const persistedState = {
   rates: {
-    mockBalances: {
+    mockBalances: [{
       BTC: {
         amount: Number(window.initialMoney)
       }
     },
+    {
+      BTC: {
+        amount: Number(window.initialMoney)
+      }
+    },
+    {
+      BTC: {
+        amount: Number(window.initialMoney)
+      }
+    },
+    {
+      BTC: {
+        amount: Number(window.initialMoney)
+      }
+    },
+    {
+      BTC: {
+        amount: Number(window.initialMoney)
+      }
+    }],
     variationList: [],
     sellPrices : {},
     buyPrices: {},
@@ -36,7 +61,7 @@ const persistedState = {
     priceLowHigh24h :{},
     change24h: {},
     tick: 0,
-    nbTrades: 0
+    nbTrades: [0, 0, 0, 0, 0]
   },
   errors: {
   }
