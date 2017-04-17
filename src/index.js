@@ -26,7 +26,7 @@ window.initialMoney = 0.03843494;
 
 window.tickCount = 0;
 
-window.TRADES = 'type;coin;amount;buyPrice;sellPrice;variation\n';
+window.TRADES = 'type;coin;amount;buyPrice;sellPrice;variation;mock\n';
 
 const persistedState = {
   rates: {
