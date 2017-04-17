@@ -9,7 +9,6 @@ import Page2 from './Page2';
 import './index.css';
 import { Router, Route, browserHistory } from 'react-router';
 
-window.outputCsv = 'variationBtcMoy'+';'+'evolution'+';'+'variationGlobal'+';'+'totalBTCValue'+';'+'totalMockBTCValue'+';'+'nbTrades'+'@'
 
 
 

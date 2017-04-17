@@ -482,7 +482,16 @@ const rates = (state = [], action) => {
       const tick = state.tick + 1;
 
       if( tick%12 == 0) {
-        window.outputCsv = window.outputCsv + variationBtcMoy+';'+evolution+';'+variationGlobal+';'+totalBTCValue+';'+totalMockBTCValues[0]+';'+nbTrades+'@'
+        if (!window.outputCsv) {
+          window.outputCsv = 'variationBtcMoy'+';'+'evolution'+';'+'variationGlobal'+';'+'totalBTCValue'+';'+'totalMockBTCValue'+';'+'nbTrades'+'\n'
+
+        }
+        window.outputCsv += variationBtcMoy+';'+evolution+';'+variationGlobal+';'+totalBTCValue+';'
+        window.outputCsv += totalMockBTCValues[0]+';'+nbTrades[0]+';'
+        window.outputCsv += totalMockBTCValues[1]+';'+nbTrades[1]+';'
+        window.outputCsv += totalMockBTCValues[2]+';'+nbTrades[2]+';'
+        window.outputCsv += totalMockBTCValues[3]+';'+nbTrades[3]+';'
+        window.outputCsv += totalMockBTCValues[4]+';'+nbTrades[4]+'\n'
       }
       const timestamp = new Date();
 
