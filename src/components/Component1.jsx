@@ -267,6 +267,7 @@ class Component1 extends Component {
           BTC: { marketVariation ? (marketVariation.variationBtc || 0) : 0} % <br />
           BTC MOY: { marketVariation ? (marketVariation.variationBtcMoy || 0) : 0} % <br />
           EVOLUTION: { marketVariation ? (marketVariation.evolution || 0) : 0} % <br />
+          Tick: {window.tickCount} 
         </div>
 
         <div>
