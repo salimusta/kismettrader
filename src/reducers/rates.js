@@ -7,14 +7,14 @@ function sellCoin(balances, coin, sellPrice, mock) {
   const btcAmount = (amount * sellPrice) * (1 - 0.0025);
   const btcUsed = mockBalances[coin].btcUsed;
   const variation = Math.round(((btcAmount / btcUsed) - 1) * 10000) / 100;
-  console.log(mock+" Sell Coin "+coin+" @ " + sellPrice+" amount:"+amount+" BTC amount"+btcAmount+" Variation:"+variation)
+  console.log(mock+" Sell Coin "+coin+" @ " + sellPrice+" amount:"+amount+" BTC amount"+btcAmount+" Variation:"+variation+" Tick:"+window.tickCount)
 
   window.TRADES += 'SELL;';
   window.TRADES += coin+';';
   window.TRADES += amount+';';
   window.TRADES += mockBalances[coin].initialPrice+';';
   window.TRADES += sellPrice+';';
-  window.TRADES += variation+';'+mock+'\n';
+  window.TRADES += variation+';'+mock+';'+window.tickCount+'\n';
 
   mockBalances[coin].amount = 0;
   mockBalances[coin].initialPrice = null;
@@ -28,14 +28,14 @@ function buyCoin(balances, coin, amount, purchasePrice, mock) {
   const mockBalances = balances;
 
   const coinAmount = (amount / purchasePrice) * (1 - 0.0025);
-  console.log(mock+" Buy Coin "+coin+" @ " + purchasePrice+" amount:"+coinAmount+" BTC amount"+amount)
+  console.log(mock+" Buy Coin "+coin+" @ " + purchasePrice+" amount:"+coinAmount+" BTC amount"+amount+" Tick:"+window.tickCount)
 
   window.TRADES += 'BUY;';
   window.TRADES += coin+';';
   window.TRADES += coinAmount+';';
   window.TRADES += purchasePrice+';';
   window.TRADES += '--;';
-  window.TRADES += '--;'+mock+'\n';
+  window.TRADES += '--;'+mock+';'+window.tickCount+'\n';
 
 
   if (isEmpty(mockBalances[coin])) {
@@ -48,6 +48,7 @@ function buyCoin(balances, coin, amount, purchasePrice, mock) {
   mockBalances[coin].initialPrice = purchasePrice;
   mockBalances[coin].btcUsed += amount;
   mockBalances[coin].tick = window.tickCount;
+  mockBalances[coin].maxVariation = 0;
 
   //Retrieve BTC Values
   mockBalances.BTC.amount -= amount;
@@ -144,6 +145,8 @@ const rates = (state = [], action) => {
 
               sellPrices[coinName].minEvolution100 = 0;
               buyPrices[coinName].maxEvolution100 = 0;
+              sellPrices[coinName].minEvolution40 = 0;
+              buyPrices[coinName].maxEvolution40 = 0;
             }
             sellPrices[coinName].Value = sellPrice;
             buyPrices[coinName].Value = purchasePrice;
@@ -228,10 +231,15 @@ const rates = (state = [], action) => {
                 sellPrices[coinName].minEvolution100 = Math.min(sellPrices[coinName].Evolution100, sellPrices[coinName].minEvolution100);
               }
 
+              if (window.tickCount > 50 && window.tickCount < 150) {
+                buyPrices[coinName].maxEvolution40 = Math.max(buyPrices[coinName].Evolution40, buyPrices[coinName].maxEvolution40);
+                sellPrices[coinName].minEvolution40 = Math.min(sellPrices[coinName].Evolution40, sellPrices[coinName].minEvolution40);
+              }
+
             }
 
-            variationPurchasePrices += buyPrices[coinName].Evolution20;
-            variationSellPrices += sellPrices[coinName].Evolution20;
+            //variationPurchasePrices += buyPrices[coinName].Evolution20;
+            //variationSellPrices += sellPrices[coinName].Evolution20;
 
             //SHOULD WE BUY ????
             /*
@@ -304,6 +312,34 @@ const rates = (state = [], action) => {
             }
 
             usedMock = 3;
+            limitUp = 1.01;
+            coefUp = (buyPrices[coinName].Value * limitUp) - buyPrices[coinName].Value;
+            coefDown = (sellPrices[coinName].Value * 0.995) - sellPrices[coinName].Value;
+            buyPrices[coinName].coefUp[usedMock] = coefUp;
+            sellPrices[coinName].coefDown[usedMock] = coefDown;
+            alreadyPurchased = mockBalances[usedMock][coinName] ? mockBalances[usedMock][coinName].amount > 0 : false;
+            btcUseAmount = mockBalances[usedMock].BTC.amount > 0.005 ? mockBalances[usedMock].BTC.amount / 5 : mockBalances[usedMock].BTC.amount;
+            if (window.tickCount > 100 && sellPrices[coinName].Evolution40 > 0 && buyPrices[coinName].Evolution40 > coefUp && !alreadyPurchased) {
+              if (btcUseAmount > 0) {
+                mockBalances[usedMock] = buyCoin(mockBalances[usedMock], coinName, btcUseAmount, buyPrices[coinName].Value, usedMock);
+              }
+            }
+
+            usedMock = 4;
+            limitUp = 1.02;
+            coefUp = (buyPrices[coinName].Value * limitUp) - buyPrices[coinName].Value;
+            coefDown = (sellPrices[coinName].Value * 0.995) - sellPrices[coinName].Value;
+            buyPrices[coinName].coefUp[usedMock] = coefUp;
+            sellPrices[coinName].coefDown[usedMock] = coefDown;
+            alreadyPurchased = mockBalances[usedMock][coinName] ? mockBalances[usedMock][coinName].amount > 0 : false;
+            btcUseAmount = mockBalances[usedMock].BTC.amount > 0.005 ? mockBalances[usedMock].BTC.amount / 5 : mockBalances[usedMock].BTC.amount;
+            if (window.tickCount > 100 && sellPrices[coinName].Evolution40 > 0 && buyPrices[coinName].Evolution40 > coefUp && !alreadyPurchased) {
+              if (btcUseAmount > 0) {
+                mockBalances[usedMock] = buyCoin(mockBalances[usedMock], coinName, btcUseAmount, buyPrices[coinName].Value, usedMock);
+              }
+            }
+
+            /*usedMock = 3;
             coefUp = buyPrices[coinName].maxEvolution100 * 2;
             coefDown = sellPrices[coinName].minEvolution100;
             buyPrices[coinName].coefUp[usedMock] = coefUp;
@@ -327,7 +363,7 @@ const rates = (state = [], action) => {
               if (btcUseAmount > 0) {
                 mockBalances[usedMock] = buyCoin(mockBalances[usedMock], coinName, btcUseAmount, buyPrices[coinName].Value, usedMock);
               }
-            }
+            }*/
           }
         }
       }
@@ -405,6 +441,43 @@ const rates = (state = [], action) => {
       }
 
       usedMock = 3;
+      limitDown = 0.995;
+      for (const coinName in mockBalances[usedMock]) {
+        //Calculate Variation of existing amounts
+        if (coinName !== 'BTC') {
+          const amount = mockBalances[usedMock][coinName].amount;
+          const sellPrice = sellPrices[coinName].Value;
+          const variation = mockBalances[usedMock][coinName].variation;
+          const maxVariation = mockBalances[usedMock][coinName].maxVariation;
+          const coefDown = sellPrices[coinName].coefDown[usedMock];
+          const tickDif = Number(window.tickCount) - Number(mockBalances[usedMock][coinName].tick);
+          const varCond = variation < -2 || (variation > 2 && variation < maxVariation * 0.9)
+          if (varCond && tickDif > 4 && amount > 0 && window.tickCount > 100 && (sellPrices[coinName].Evolution40 < coefDown)) {
+            mockBalances[usedMock] = sellCoin(mockBalances[usedMock], coinName, sellPrice, usedMock);
+            nbTrades[usedMock]++;
+          }
+        }
+      }
+
+      usedMock = 4;
+      for (const coinName in mockBalances[usedMock]) {
+        //Calculate Variation of existing amounts
+        if (coinName !== 'BTC') {
+          const coefDown = sellPrices[coinName].coefDown[usedMock];
+          const amount = mockBalances[usedMock][coinName].amount;
+          const sellPrice = sellPrices[coinName].Value;
+          const variation = mockBalances[usedMock][coinName].variation;
+          const maxVariation = mockBalances[usedMock][coinName].maxVariation;
+          const tickDif = Number(window.tickCount) - Number(mockBalances[usedMock][coinName].tick);
+          const varCond = variation > 1;
+          if (varCond && tickDif > 4 && amount > 0 && window.tickCount > 100 && (sellPrices[coinName].Evolution40 < coefDown)) {
+            mockBalances[usedMock] = sellCoin(mockBalances[usedMock], coinName, sellPrice, usedMock);
+            nbTrades[usedMock]++;
+          }
+        }
+      }
+
+      /*usedMock = 3;
       for (const coinName in mockBalances[usedMock]) {
         //Calculate Variation of existing amounts
         if (coinName !== 'BTC') {
@@ -435,7 +508,7 @@ const rates = (state = [], action) => {
           }
         }
       }
-
+*/
 
       //Estimating BTC Value + Variation
       const totalMockBTCValues = [];
@@ -446,6 +519,8 @@ const rates = (state = [], action) => {
           if (!isEmpty(mockBalances[i][coinName]) && sellPrices[coinName]) {
             mockBalances[i][coinName].btcValue = sellPrices[coinName].Value * mockBalances[i][coinName].amount * (1 - 0.0025);
             mockBalances[i][coinName].variation = Math.round(((mockBalances[i][coinName].btcValue / mockBalances[i][coinName].btcUsed) - 1) * 10000) / 100;
+            mockBalances[i][coinName].maxVariation = Math.max(mockBalances[i][coinName].maxVariation, mockBalances[i][coinName].variation)
+            //console.log("maxVar", mockBalances[i][coinName].maxVariation)
             totalMockBTCValues[i] += mockBalances[i][coinName].btcValue;
           }
         }
