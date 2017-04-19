@@ -33,12 +33,12 @@ class Component1 extends Component {
   }
 
   componentWillMount() {
-    //this.props.dispatch(returnTicker());
-    this.props.dispatch(simulateTick());
+    this.props.dispatch(returnTicker());
+    //this.props.dispatch(simulateTick());
     if (window.REAL) {
       //this.props.dispatch(accountBalances());
-      //this.mainInterval = setInterval(() => { this.props.dispatch(returnTicker()); }, 5000);
-      this.mainInterval = setInterval(() => { this.props.dispatch(simulateTick()); }, 100);
+      this.mainInterval = setInterval(() => { this.props.dispatch(returnTicker()); }, 5000);
+      //this.mainInterval = setInterval(() => { this.props.dispatch(simulateTick()); }, 100);
     }
   }
 
