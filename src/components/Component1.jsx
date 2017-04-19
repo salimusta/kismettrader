@@ -1,6 +1,6 @@
 import React, { PropTypes, Component } from 'react';
 import { Button, Table, Modal, Panel } from 'react-bootstrap';
-import { returnTicker, sellCoin, buyCoin, buyAll, sellAll, accountBalances, tradingHistory, buyForReal, sellForReal, resetErrors } from '../actions';
+import { returnTicker, sellCoin, buyCoin, buyAll, sellAll, accountBalances, simulateTick, tradingHistory, buyForReal, sellForReal, resetErrors } from '../actions';
 import { isEmpty } from 'lodash';
 
 import RTChart from 'react-rt-chart';
@@ -32,12 +32,13 @@ class Component1 extends Component {
     this.setState({ openedPanel });
   }
 
-
   componentWillMount() {
-    this.props.dispatch(returnTicker());
+    //this.props.dispatch(returnTicker());
+    this.props.dispatch(simulateTick());
     if (window.REAL) {
-      this.props.dispatch(accountBalances());
-      this.mainInterval = setInterval(() => { this.props.dispatch(returnTicker()); }, 5000);
+      //this.props.dispatch(accountBalances());
+      //this.mainInterval = setInterval(() => { this.props.dispatch(returnTicker()); }, 5000);
+      this.mainInterval = setInterval(() => { this.props.dispatch(simulateTick()); }, 100);
     }
   }
 
@@ -155,7 +156,7 @@ class Component1 extends Component {
             { buyPrices[coin].SmoothEvolution } | { sellPrices[coin].SmoothEvolution } [ { sellPrices[coin].SmoothEvolutionMax } ]
           </th>
           <th>
-            <PriceVar amount={ priceLowHigh24h[coin].Value } />
+            --
           </th>
           <th>
             { haveAnyCoins ? mockBalances[0][coin].amount : 0 }
@@ -267,7 +268,7 @@ class Component1 extends Component {
           BTC: { marketVariation ? (marketVariation.variationBtc || 0) : 0} % <br />
           BTC MOY: { marketVariation ? (marketVariation.variationBtcMoy || 0) : 0} % <br />
           EVOLUTION: { marketVariation ? (marketVariation.evolution || 0) : 0} % <br />
-          Tick: {window.tickCount} 
+          Tick: {window.tickCount}
         </div>
 
         <div>

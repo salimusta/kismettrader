@@ -2,6 +2,10 @@ const agent = require('superagent-promise')(require('superagent'), Promise);
 const nonce = require('nonce')();
 const crypto  = require('crypto');
 
+import { data } from '../allData';
+window.index = 0;
+
+console.log(data.length)
 import { secret, apiKey } from '../config/config'
 
 export const REQUEST_BTC_RATES = 'REQUEST_BTC_RATES';
@@ -33,6 +37,28 @@ export const BUY_ALL_COIN = 'BUY_ALL_COIN';
 
 export const RESET_ERRORS = 'RESET_ERRORS';
 
+export function simulateTick() {
+  if (window.index >= data.length) {
+    return {
+      type: RECEIVE_TICKER,
+      data: null
+    };
+  }
+  const jsonData = {
+
+  }
+  for(const coin in data[window.index]) {
+    jsonData[coin] = {
+      lowestAsk: data[window.index][coin][0],
+      highestBid: data[window.index][coin][1]
+    }
+  }
+  window.index ++ ;
+  return {
+    type: RECEIVE_TICKER,
+    data: jsonData
+  };
+}
 
 export function resetErrors() {
   return {

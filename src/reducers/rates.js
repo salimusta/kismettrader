@@ -92,6 +92,12 @@ const rates = (state = [], action) => {
         balances: action.balances
       };
     case 'RECEIVE_TICKER':
+      if (action.data === null) {
+        return {
+          ...state
+        }
+      }
+
       window.tickCount++;
       let variationBtc = 0;
       let variationGlobal = 0;
@@ -100,7 +106,6 @@ const rates = (state = [], action) => {
       const sellPrices = state.sellPrices;
       const buyPrices = state.buyPrices;
       const difPrices = state.difPrices;
-      const priceLowHigh24h = state.priceLowHigh24h;
       let difPricesTotal = 0;
       let variationPurchasePrices = 0;
       let variationSellPrices = 0;
@@ -108,28 +113,32 @@ const rates = (state = [], action) => {
       mockBalances = state.mockBalances;
       let balances = state.balances;
 
+      window.DATA += '{'
+      var first = true;
       for (const altCoin in data) {
         //Bitcoin market
         if (altCoin.indexOf('BTC_') >= 0) {
-          const coinName = altCoin.substring(4, 10);
+          const coinName = altCoin.substring(4, 10)
 
           change24h[coinName] = Math.round(data[altCoin].percentChange * 10000) / 100;
 
           variationBtc += Number(data[altCoin].percentChange);
 
-          const volume24h = Number(data[altCoin].baseVolume);
-          const maxSellPrice24h = Number(data[altCoin].high24hr);
-          const minPurchasePrice24h = Number(data[altCoin].low24hr);
-          const lowHigh24h = Math.round(((maxSellPrice24h / minPurchasePrice24h) - 1) * 10000) / 100;
           const purchasePrice = Number(data[altCoin].lowestAsk);
           const sellPrice = Number(data[altCoin].highestBid);
+
+          if(!first) {
+            window.DATA +=',\n';
+          }
+          window.DATA += altCoin+':['+purchasePrice+','+sellPrice+']'
+
+          first = false
 
           if (sellPrice > 0) {
             if (isEmpty(sellPrices[coinName])) {
               sellPrices[coinName] = {};
               buyPrices[coinName] = {};
               difPrices[coinName] = {};
-              priceLowHigh24h[coinName] = {};
               sellPrices[coinName].Values20 = [];
               buyPrices[coinName].Values20 = [];
               sellPrices[coinName].Values40 = [];
@@ -153,7 +162,7 @@ const rates = (state = [], action) => {
             difPrices[coinName].Value = Math.round(((sellPrices[coinName].Value / buyPrices[coinName].Value) - 1) * 10000) / 100 ;
             difPricesTotal += difPrices[coinName].Value;
 
-            priceLowHigh24h[coinName].Value = lowHigh24h ;
+
 
             //Store Value for evolution
             const length20 = sellPrices[coinName].Values20.length;
@@ -367,6 +376,8 @@ const rates = (state = [], action) => {
           }
         }
       }
+
+      window.DATA += '},'
       let nbTrades = state.nbTrades;
       //Should we sell?
       /*
@@ -633,7 +644,6 @@ const rates = (state = [], action) => {
         sellPrices,
         buyPrices,
         difPrices,
-        priceLowHigh24h,
         difPricesTotal,
         totalBTCValue,
         totalMockBTCValues,

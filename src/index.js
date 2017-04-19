@@ -10,7 +10,7 @@ import './index.css';
 import { Router, Route, browserHistory } from 'react-router';
 
 
-
+window.DATA = 'export const data = [';
 
 window.REAL = true;
 
